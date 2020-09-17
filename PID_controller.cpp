@@ -9,7 +9,7 @@
 #include "PID_controller.h"
 
 // constructor
-PID_controller::PID_controller(float K_p_new, float K_i_new, float K_d_new, float min_mv_tol_new, float min_mv_new, float max_mv_new) {
+PID_controller::PID_controller(float K_p_new, float K_i_new, float K_d_new, float min_mv_tol_new, float min_mv_new, float max_mv_new, float max_iterm_new) {
 	mv = 0;
 	
 	K_p = K_p_new;
@@ -19,6 +19,7 @@ PID_controller::PID_controller(float K_p_new, float K_i_new, float K_d_new, floa
 	min_mv_tol = abs(min_mv_tol_new);
 	min_mv = abs(min_mv_new);
 	max_mv = abs(max_mv_new);
+	max_iterm = abs(max_iterm_new);
 	
 	update_time_ratio = 1;
 	pid_update_counter = 0;
@@ -69,6 +70,11 @@ void PID_controller::set_max_mv(float max_mv_new) {
 	max_mv = abs(max_mv_new);
 }
 
+// set absolute maximum for integral term (iterm)
+void PID_controller::set_max_iterm(float max_iterm_new) {
+	max_iterm = abs(max_iterm_new);
+}
+
 // calculate manipulated variable (mv) from setpoint (sp) and process variable (pv)
 float PID_controller::get_mv(float sp, float pv, float dT) {
 	pid_update_counter++;
@@ -77,20 +83,19 @@ float PID_controller::get_mv(float sp, float pv, float dT) {
 	
 	if (pid_update_counter == update_time_ratio) {
 		proportional = (sp - pv);
-		
 		prop_sum = proportional + proportional_old;
 		
 		integral += dT_pid * prop_sum * 0.5;
+		iterm = K_i * integral;
 		
-		// wind-up compensation
-		if (((mv >= max_mv) && (prop_sum > 0)) || ((mv <= -max_mv) && (prop_sum < 0)))
-		{
+		// limit integral value when integral term or absolute manipulated variable would exceed their limits (wind-up compensation)
+		if ((abs(iterm) >= max_iterm) || (((mv >= max_mv) && (prop_sum > 0)) || ((mv <= -max_mv) && (prop_sum < 0)))) {
 			integral = integral_old;
 		}
 		
 		derivative = (proportional - proportional_old) / dT_pid;
 		
-		mv = K_p * proportional + K_i * integral + K_d * derivative;
+		mv = K_p * proportional + iterm + K_d * derivative;
 		
 		// constrain the manipulated variable (mv)
 		constrain_mv();

@@ -11,10 +11,11 @@
 
 #include "Arduino.h"
 
-class PID_controller
-{
-	//variables
+class PID_controller {
 	private:
+
+	// constrain manipulated variable (mv)
+	void constrain_mv();
 
 	// manipulated variable (mv)
 	float mv;
@@ -28,10 +29,12 @@ class PID_controller
 	
 	// tolerance before minimum min_mv is applied
 	float min_mv_tol;
-	// absolute minimum of manipulated variable (mv)
+	// absolute minimum for manipulated variable (mv)
 	float min_mv;
-	// absolute maximum of manipulated variable (mv)
+	// absolute maximum for manipulated variable (mv)
 	float max_mv;
+	// absolute maximum for integral term (iterm)
+	float max_iterm;
 	
 	// targeted PID update time in microseconds
 	int32_t pid_update_time;
@@ -56,13 +59,14 @@ class PID_controller
 	
 	// prop_sum = proportional + proportional_old
 	float prop_sum;
+	// iterm = K_i * integral
+	float iterm;
 	
 	
-	//functions
 	public:
 	
 	// constructor
-	PID_controller(float K_p_new, float K_i_new, float K_d_new, float min_mv_tol_new, float min_mv_new, float max_mv_new);
+	PID_controller(float K_p_new, float K_i_new, float K_d_new, float min_mv_tol_new, float min_mv_new, float max_mv_new, float max_iterm_new);
 	
 	// set targeted PID update time
 	void set_pid_update_time(int32_t pid_update_time_new, int32_t update_time_new);
@@ -78,11 +82,11 @@ class PID_controller
 	void set_min_mv(float min_mv_new);
 	// set absolute maximum for manipulated variable (mv)
 	void set_max_mv(float max_mv_new);
+	// set absolute maximum for integral term (iterm)
+	void set_max_iterm(float max_iterm_new);
 
 	// calculate manipulated variable (mv) from setpoint (sp) and process variable (pv)
 	float get_mv(float sp_new, float pv_new, float dT);
-	// constrain manipulated variable (mv)
-	void constrain_mv();
 	// reset PID controller
 	void reset();
 };
