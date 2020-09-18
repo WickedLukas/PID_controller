@@ -30,6 +30,7 @@ PID_controller::PID_controller(float K_p_new, float K_i_new, float K_d_new, floa
 	proportional_old = 0;
 	integral = 0;
 	integral_old = 0;
+	iterm_old = 0;
 	derivative = 0;
 }
 
@@ -89,8 +90,9 @@ float PID_controller::get_mv(float sp, float pv, float dT) {
 		iterm = K_i * integral;
 		
 		// limit integral value when integral term or absolute manipulated variable would exceed their limits (wind-up compensation)
-		if ((abs(iterm) >= max_iterm) || (((mv >= max_mv) && (prop_sum > 0)) || ((mv <= -max_mv) && (prop_sum < 0)))) {
+		if ((abs(iterm) >= max_iterm) || ((mv >= max_mv) && (prop_sum > 0)) || ((mv <= -max_mv) && (prop_sum < 0))) {
 			integral = integral_old;
+			iterm = iterm_old;
 		}
 		
 		derivative = (proportional - proportional_old) / dT_pid;
@@ -104,6 +106,7 @@ float PID_controller::get_mv(float sp, float pv, float dT) {
 		dT_pid = 0;
 		proportional_old = proportional;
 		integral_old = integral;
+		iterm_old = iterm;
 	}
 	return mv;
 }
@@ -139,5 +142,6 @@ void PID_controller::reset() {
 	proportional_old = 0;
 	integral = 0;
 	integral_old = 0;
+	iterm_old = 0;
 	derivative = 0;
 }

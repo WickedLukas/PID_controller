@@ -53,7 +53,8 @@ class PID_controller {
 	// proportional error
 	float proportional, proportional_old;
 	// integral error
-	float integral, integral_old;
+	float integral, integral_old; 
+	float iterm_old;
 	// derivative error
 	float derivative;
 	
