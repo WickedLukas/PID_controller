@@ -99,7 +99,7 @@ float PID_controller::get_mv(float sp, float pv, float dT) {
 		
 		mv = K_p * proportional + iterm + K_d * derivative;
 		
-		// constrain the manipulated variable (mv)
+		// constrain manipulated variable (mv)
 		constrain_mv();
 		
 		pid_update_counter = 0;
