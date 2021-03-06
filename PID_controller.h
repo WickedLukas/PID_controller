@@ -35,6 +35,8 @@ class PID_controller {
 	float max_mv;
 	// absolute maximum for integral term (iterm)
 	float max_iterm;
+	// ema filter value for derivative controller input
+	float ema_filter_d;
 	
 	// targeted PID update time in microseconds
 	int32_t pid_update_time;
@@ -52,6 +54,8 @@ class PID_controller {
 	
 	// proportional error
 	float proportional, proportional_old;
+	// proportional error used for derivative controller (filtered)
+	float proportional_d, proportional_d_old;
 	// integral error
 	float integral, integral_old; 
 	float iterm_old;
@@ -67,7 +71,7 @@ class PID_controller {
 	public:
 	
 	// constructor
-	PID_controller(float K_p_new, float K_i_new, float K_d_new, float min_mv_tol_new, float min_mv_new, float max_mv_new, float max_iterm_new);
+	PID_controller(float K_p_new, float K_i_new, float K_d_new, float min_mv_tol_new, float min_mv_new, float max_mv_new, float max_iterm_new, float ema_filter_d_new = 1);
 	
 	// set targeted PID update time
 	void set_pid_update_time(int32_t pid_update_time_new, int32_t update_time_new);
