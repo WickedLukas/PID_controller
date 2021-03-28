@@ -10,9 +10,7 @@
 #include "ema_filter.h"
 
 // constructor
-PID_controller::PID_controller(float K_p_new, float K_i_new, float K_d_new, float min_mv_tol_new, float min_mv_new, float max_mv_new, float max_iterm_new, float ema_filter_d_new) {
-	mv = 0;
-	
+PID_controller::PID_controller(float K_p_new, float K_i_new, float K_d_new, float min_mv_tol_new, float min_mv_new, float max_mv_new, float max_iterm_new, float ema_filter_p_new, float ema_filter_d_new) {
 	K_p = K_p_new;
 	K_i = K_i_new;
 	K_d = K_d_new;
@@ -21,6 +19,7 @@ PID_controller::PID_controller(float K_p_new, float K_i_new, float K_d_new, floa
 	min_mv = abs(min_mv_new);
 	max_mv = abs(max_mv_new);
 	max_iterm = abs(max_iterm_new);
+	ema_filter_p = abs(ema_filter_p_new);
 	ema_filter_d = abs(ema_filter_d_new);
 	
 	update_time_ratio = 1;
@@ -28,10 +27,13 @@ PID_controller::PID_controller(float K_p_new, float K_i_new, float K_d_new, floa
 	
 	dT_pid = 0;
 	
+	mv = 0;
+	
+	error = 0;
+	error_old = 0;
+	error_d = 0;
+	error_d_old = 0;
 	proportional = 0;
-	proportional_old = 0;
-	proportional_d = 0;
-	proportional_d_old = 0;
 	integral = 0;
 	integral_old = 0;
 	iterm_old = 0;
@@ -87,26 +89,33 @@ float PID_controller::get_mv(float sp, float pv, float dT) {
 	dT_pid += dT;
 	
 	if (pid_update_counter == update_time_ratio) {
-		proportional = (sp - pv);
-		prop_sum = proportional + proportional_old;
+		error = (sp - pv);
+		integral += dT_pid * error;
 		
-		integral += dT_pid * prop_sum * 0.5;
 		iterm = K_i * integral;
 		
 		// limit integral value when integral term or absolute manipulated variable would exceed their limits (wind-up compensation)
-		if ((abs(iterm) >= max_iterm) || ((mv >= max_mv) && (prop_sum > 0)) || ((mv <= -max_mv) && (prop_sum < 0))) {
+		if ((abs(iterm) >= max_iterm) || ((mv >= max_mv) && (error > 0)) || ((mv <= -max_mv) && (error < 0))) {
 			integral = integral_old;
 			iterm = iterm_old;
 		}
 		
-		if (ema_filter_d < 1) {
-			// filter derivative controller input
-			proportional_d = ema_filter(proportional, proportional_d, ema_filter_d);
-		
-			derivative = (proportional_d - proportional_d_old) / dT_pid;
+		if (ema_filter_p < 1) {
+			// filter error for proportional controller
+			proportional = ema_filter(error, proportional, ema_filter_p);
 		}
 		else {
-			derivative = (proportional - proportional_old) / dT_pid;
+			proportional = error;
+		}
+		
+		if (ema_filter_d < 1) {
+			// filter error for derivative controller
+			error_d = ema_filter(error, error_d, ema_filter_d);
+		
+			derivative = (error_d - error_d_old) / dT_pid;
+		}
+		else {
+			derivative = (error - error_old) / dT_pid;
 		}
 		
 		mv = K_p * proportional + iterm + K_d * derivative;
@@ -116,12 +125,30 @@ float PID_controller::get_mv(float sp, float pv, float dT) {
 		
 		pid_update_counter = 0;
 		dT_pid = 0;
-		proportional_old = proportional;
-		proportional_d_old = proportional_d;
+		
+		error_old = error;
+		error_d_old = error_d;
 		integral_old = integral;
 		iterm_old = iterm;
 	}
 	return mv;
+}
+
+// get proportional error
+float PID_controller::get_proportional() {
+	return proportional;
+}
+// get integral error
+float PID_controller::get_integral() {
+	return integral;
+}
+// get derivative error
+float PID_controller::get_derivative() {
+	return derivative;
+}
+// get error for derivative controller
+float PID_controller::get_error_d() {
+	return error_d;
 }
 
 // constrain manipulated variable (mv)
@@ -151,10 +178,11 @@ void PID_controller::reset() {
 	
 	dT_pid = 0;
 	
+	error = 0;
+	error_old = 0;
+	error_d = 0;
+	error_d_old = 0;
 	proportional = 0;
-	proportional_old = 0;
-	proportional_d = 0;
-	proportional_d_old = 0;
 	integral = 0;
 	integral_old = 0;
 	iterm_old = 0;
