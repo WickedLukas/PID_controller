@@ -89,7 +89,7 @@ float PID_controller::get_mv(float sp, float pv, float dT) {
 	dT_pid += dT;
 	
 	if (pid_update_counter == update_time_ratio) {
-		error = (sp - pv);
+		error = sp - pv;
 		integral += dT_pid * error;
 		
 		iterm = K_i * integral;
