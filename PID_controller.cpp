@@ -111,6 +111,15 @@ float PID_controller::get_mv(float sp, float pv, float dT)
 		error_d = error;
 	}
 
+	// prevent dTerm jump right after the PID controller got reset
+	if (isnan(error_d_last) || isnan(error_d_filtered_last))
+	{
+		error_d_filtered = error_d;
+		error_d_filtered_last = error_d;
+
+		error_d_last = error_d;
+	}
+
 	if (ema_filter_d < 1)
 	{
 		// filter error_d for derivative controller
@@ -153,9 +162,9 @@ void PID_controller::reset()
 	mv = 0;
 
 	error_filtered = 0;
-	error_d_last = 0;
+	error_d_last = NAN;
 	error_d_filtered = 0;
-	error_d_filtered_last = 0;
+	error_d_filtered_last = NAN;
 
 	iTerm = 0;
 	iTerm_last = 0;
