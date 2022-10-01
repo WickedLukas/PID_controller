@@ -18,11 +18,9 @@ public:
 	void set_ema_filter_p(float ema_filter_p_new); // set ema-value for proportional error filter
 	void set_ema_filter_d(float ema_filter_d_new); // set ema-value for derivative error filter
 
-	void set_sample_time(float sample_time_new); // set targeted pid-sample time in seconds
-
 	float get_pTerm(); // get proportional term
 	float get_iTerm(); // get integral term
-	float get_dTerm(); // get derivative
+	float get_dTerm(); // get derivative term
 
 	// calculate manipulated variable (mv) from setpoint (sp) and process variable (pv) using the time difference (dT) in seconds
 	float get_mv(float sp_new, float pv_new, float dT);

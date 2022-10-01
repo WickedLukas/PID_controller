@@ -53,14 +53,9 @@ void PID_controller::set_ema_filter_p(float ema_filter_p_new)
 	ema_filter_p = ema_filter_p_new;
 }
 
-void PID_controller::set_ema_filter_d(float ema_filter_p_new)
+void PID_controller::set_ema_filter_d(float ema_filter_d_new)
 {
-	ema_filter_d = ema_filter_p_new;
-}
-
-void PID_controller::set_sample_time(float sample_time_new)
-{
-	sample_time = sample_time_new;
+	ema_filter_d = ema_filter_d_new;
 }
 
 float PID_controller::get_pTerm()
@@ -87,64 +82,66 @@ float PID_controller::get_mv(float sp, float pv, float dT)
 
 	dT_pid += dT;
 
-	if (dT_pid >= sample_time)
+	if (dT_pid < sample_time)
 	{
-		error = sp - pv;
-
-		// calculate pTerm
-		if (ema_filter_p < 1)
-		{
-			error_filtered = ema_filter(error, error_filtered, ema_filter_p);
-			pTerm = K_p * error_filtered;
-		}
-		else
-		{
-			pTerm = K_p * error;
-		}
-
-		// calculate dTerm
-		if (derivative_on_measurement)
-		{
-			// derivative on measurement to get rid of derivative kick
-			error_d = -pv;
-		}
-		else
-		{
-			error_d = error;
-		}
-
-		if (ema_filter_d < 1)
-		{
-			// filter error_d for derivative controller
-			error_d_filtered = ema_filter(error_d, error_d_filtered, ema_filter_d);
-			dTerm = K_d * (error_d_filtered - error_d_filtered_last) / dT_pid;
-
-			error_d_filtered_last = error_d_filtered;
-		}
-		else
-		{
-			dTerm = K_d * (error_d - error_d_last) / dT_pid;
-
-			error_d_last = error_d;
-		}
-
-		// calculate iTerm
-		iTerm += K_i * dT_pid * error; // multiplying K_i inside the sum allows to adjust K_i on the fly
-
-		// to prevent integral windup, use last iTerm if iterm, or the absolute manipulated variable, would exceed their limits
-		if ((abs(iTerm) > max_iTerm) || ((mv >= max_mv) && (error > 0)) || ((mv <= -max_mv) && (error < 0)))
-		{
-			iTerm = iTerm_last;
-		}
-		iTerm_last = iTerm;
-
-		mv = pTerm + iTerm + dTerm;
-
-		// limit pid output
-		mv = constrain(mv, -max_mv, max_mv);
-
-		dT_pid = 0;
+		return mv;
 	}
+
+	error = sp - pv;
+
+	// calculate pTerm
+	if (ema_filter_p < 1)
+	{
+		error_filtered = ema_filter(error, error_filtered, ema_filter_p);
+		pTerm = K_p * error_filtered;
+	}
+	else
+	{
+		pTerm = K_p * error;
+	}
+
+	// calculate dTerm
+	if (derivative_on_measurement)
+	{
+		// derivative on measurement to get rid of derivative kick
+		error_d = -pv;
+	}
+	else
+	{
+		error_d = error;
+	}
+
+	if (ema_filter_d < 1)
+	{
+		// filter error_d for derivative controller
+		error_d_filtered = ema_filter(error_d, error_d_filtered, ema_filter_d);
+		dTerm = K_d * (error_d_filtered - error_d_filtered_last) / dT_pid;
+
+		error_d_filtered_last = error_d_filtered;
+	}
+	else
+	{
+		dTerm = K_d * (error_d - error_d_last) / dT_pid;
+
+		error_d_last = error_d;
+	}
+
+	// calculate iTerm
+	iTerm += K_i * dT_pid * error; // multiplying K_i inside the sum allows to adjust K_i on the fly
+
+	// to prevent integral windup, use last iTerm if iterm, or the absolute manipulated variable, would exceed their limits
+	if ((abs(iTerm) > max_iTerm) || ((mv >= max_mv) && (error > 0)) || ((mv <= -max_mv) && (error < 0)))
+	{
+		iTerm = iTerm_last;
+	}
+	iTerm_last = iTerm;
+
+	mv = pTerm + iTerm + dTerm;
+
+	// limit pid output
+	mv = constrain(mv, -max_mv, max_mv);
+
+	dT_pid = 0;
 
 	return mv;
 }
