@@ -45,10 +45,10 @@ private:
 
 	float mv; // manipulated variable (mv)
 
-	float error;								   // error
-	float error_filtered;						   // filtered error
-	float error_d, error_d_last;				   // error used for derivative term
-	float error_d_filtered, error_d_filtered_last; // filtered error used for derivative term
+	float error;								    // error
+	float error_filtered;						    // filtered error
+	float error_d, error_d_last;				    // error used for derivative term
+	double error_d_filtered, error_d_filtered_last; // filtered error used for derivative term
 
 	float pTerm;			 // proportional term
 	float iTerm, iTerm_last; // integral term
